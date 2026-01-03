@@ -1,0 +1,338 @@
+---
+title: "Regressão Linear aplicada ao IPARDES - Índice de Gini"
+author: "Luiz Francisco, Mateus Fernandes, Mateus Luzzi. *GRRs*"
+date: "junho/2023"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Resumo
+
+-------
+
+
+
+# Introdução
+Neste trabalho, iremos aplicar métodos de Regressão Linear para analisar a relação entre o Índice de Gini e um conjunto de variáveis explicativas relacionadas ao desenvolvimento socioeconômico dos municípios.
+
+O Índice de Gini, criado pelo matemático italiano Conrado Gini, é um instrumento para medir o grau de concentração de renda em determinado grupo. Ele aponta a diferença entre os rendimentos dos mais pobres e dos mais ricos. Numericamente, varia de zero a um (alguns apresentam de zero a cem). O valor zero representa a situação de igualdade, ou seja, todos têm a mesma renda. O valor um (ou cem) está no extremo oposto, isto é, uma só pessoa detém toda a riqueza. Na prática, o Índice de Gini costuma comparar os 20% mais pobres com os 20% mais ricos. No Relatório de Desenvolvimento Humano 2004, elaborado pelo Pnud, o Brasil aparece com Índice de 0,591, quase no final da lista de 127 países. Apenas sete nações apresentam maior concentração de renda.[^1]
+
+Em resumo, o Índice de Gini é uma medida que permite avaliar o grau de desigualdade de renda em determinado grupo populacional, sendo utilizado como um indicador importante para medir a distribuição de renda.
+
+As variáveis explicativas selecionadas para este estudo são:
+
+1. População Estimada (IBGE) - Residentes em 01/07: A população estimada de um município pode influenciar o Índice de Gini, uma vez que a concentração de renda está relacionada à distribuição da população. Municípios com maior população podem apresentar maior desigualdade de renda devido a diversos fatores, como a presença de grandes centros urbanos ou desequilíbrios regionais.
+
+2. Índice Ipardes de Desempenho Municipal (IPDM): O IPDM é um indicador composto que mede o desempenho dos municípios em diferentes áreas, como educação, saúde, infraestrutura, entre outros. A inclusão dessa variável se baseia na premissa de que municípios com melhores indicadores de desempenho tendem a apresentar menor desigualdade de renda.
+
+3. Produto Interno Bruto (PIB) a Preços Correntes (R$ 1.000,00): O PIB é uma medida amplamente utilizada para medir a atividade econômica de um determinado local. A inclusão dessa variável se baseia na suposição de que municípios com maior PIB podem apresentar menor desigualdade de renda, uma vez que um maior nível de atividade econômica pode gerar oportunidades de emprego e renda para a população local.
+
+4. Produto Interno Bruto (PIB) per Capita (R$ 1,00): Essa variável corresponde ao PIB dividido pela população do município, representando uma medida de renda média por habitante. A inclusão dessa variável se justifica pelo pressuposto de que municípios com maior renda per capita tendem a apresentar menor desigualdade de renda, uma vez que a riqueza gerada é mais distribuída entre a população.
+
+5. Taxa de Analfabetismo de 15 anos ou mais (%): A taxa de analfabetismo é um indicador que reflete o acesso à educação e pode estar associado à desigualdade de renda. Municípios com altas taxas de analfabetismo podem apresentar maior desigualdade, uma vez que a falta de educação formal pode limitar as oportunidades de emprego e renda.
+
+6. Taxa de Distorção Idade Série no Ensino Fundamental (%): Essa taxa indica a proporção de alunos que apresentam defasagem idade-série no ensino fundamental, ou seja, que estão em séries inferiores àquelas correspondentes à sua idade. A inclusão dessa variável se baseia na suposição de que a distorção idade-série pode estar relacionada à desigualdade de oportunidades educacionais, o que por sua vez pode influenciar a desigualdade de renda.
+
+7. Taxa de Distorção Idade Série no Ensino Médio (%): Essa taxa é similar à anterior, porém avalia a distorção idade-série no ensino médio. A inclusão dessa variável se justifica pelo mesmo motivo mencionado anteriormente: a distorção idade-série pode indicar desigualdades educacionais que podem influenciar a desigualdade de renda.
+
+8. PEA (10 anos e mais) - Total: Essa variável representa a População Economicamente Ativa, ou seja, o número de pessoas em idade ativa que estão empregadas ou em busca de emprego. A inclusão dessa variável se baseia na suposição de que municípios com maior participação da população na força de trabalho podem apresentar menor desigualdade de renda, uma vez que a existência de mais oportunidades de emprego pode contribuir para a redução das disparidades.
+
+Por meio da análise de regressão linear, pretende-se investigar a relação entre o Índice de Gini e essas variáveis explicativas, com o objetivo de compreender os fatores socioeconômicos que podem estar associados à desigualdade de renda nos municípios.
+
+[^1]: Fonte: [www.ipea.gov.br/desafios/index.php?option=com_content&id=2048:catid=28](www.ipea.gov.br/desafios/index.php?option=com_content&id=2048:catid=28)
+
+# Material e métodos
+
+## Extração
+Os dados utilizados neste estudo foram extraídos do Instituto Paranaense de Desenvolvimento Econômico e Social (IPARDES)[^2]. Foram selecionadas oito variáveis previamente mencionadas, que abrangem diferentes aspectos socioeconômicos, e que podem estar relacionadas ao Índice de Gini. Essas variáveis foram coletadas para os 399 municípios do Estado do Paraná.
+
+O período da extração compreende os anos de 2017 a 2022 para todas as variáveis, exceto a Taxa de Analfabetismo e o Índice de Gini, cujo últimos dados disponíveis se referem ao ano de 2010. A escolha desse período é relevante para analisar o impacto das variáveis explicativas sobre o Índice de Gini em um intervalo de tempo recente, permitindo uma compreensão atualizada da desigualdade de renda nos municípios paranaenses.
+
+Os dados foram obtidos por meio da consulta com os parâmetros já enunciados e o arquivo retorno pode ser visto a seguir:
+
+[^2]: Fonte: [http://www.ipardes.gov.br/imp/](http://www.ipardes.gov.br/imp/)
+
+```{r, echo=FALSE}
+dados <- read.csv("dados.csv", sep = ";")
+colnames(dados)[2] <- "Variavel"
+valores <- c("Gini", "IPDM", "Populacao", "PIB Corrente", "PIB per Capita", "Analfabetismo", "Distorcao Fundamen", "Distorcao Medio", "PEA")
+dados$Variavel <- rep(valores, length.out = nrow(dados))
+head(dados[, c(1, 2, 3, ncol(dados) - 3, ncol(dados) - 2, ncol(dados) - 1, ncol(dados))], n = 9)
+```
+## Pré-processamento e tratamento
+Ao analisar as variáveis fornecidas, podemos observar que nem todos os anos selecionados possuem dados disponíveis. Para lidar com essa situação, uma abordagem comum é realizar uma transformação nos dados, criando uma nova coluna que receberá o valor mais recente disponível para cada variável. Dessa forma, garantimos que todas as observações tenham pelo menos um valor válido.
+
+
+```{r, echo=FALSE}
+
+dados$Valor <- NA
+dados$Valor <- dados[, ncol(dados)-1]
+dados$Valor[dados$Valor == ""] <- dados[, ncol(dados)-2][dados$Valor == ""]
+dados$Valor[dados$Valor == ""] <- dados[, ncol(dados)-3][dados$Valor == ""]
+dados$Valor[dados$Valor == ""] <- dados[, ncol(dados)-4][dados$Valor == ""]
+dados$Valor[dados$Valor == ""] <- dados[, ncol(dados)-5][dados$Valor == ""]
+dados$Valor[dados$Valor == ""] <- dados[, ncol(dados)-6][dados$Valor == ""]
+dados$Valor[dados$Valor == ""] <- dados[, ncol(dados)-7][dados$Valor == ""]
+
+dados <- dados[, c(1, 2, ncol(dados))]
+#install.packages
+library(readr)
+dados$Valor <- parse_number(dados$Valor, locale = locale(decimal_mark = ",", grouping_mark = "."))
+options(scipen = 999)
+
+df <- data.frame(
+            Localidade = dados$Localidade[seq(9, nrow(dados), by = 9)],
+            Gini = dados$Valor[seq(1, nrow(dados), by = 9)],
+            IPDM = dados$Valor[seq(2, nrow(dados), by = 9)],
+            Populacao = dados$Valor[seq(3, nrow(dados), by = 9)],
+            PIB_Corrente = dados$Valor[seq(4, nrow(dados), by = 9)],
+            PIB_per_Capita = dados$Valor[seq(5, nrow(dados), by = 9)],
+            Analfabetismo = dados$Valor[seq(6, nrow(dados), by = 9)],
+            Distorcao_Fundamen = dados$Valor[seq(7, nrow(dados), by = 9)],
+            Distorcao_Medio = dados$Valor[seq(8, nrow(dados), by = 9)],
+            PEA = dados$Valor[seq(9, nrow(dados), by = 9)])
+
+
+```
+
+Para destacar as modificações realizadas nas variáveis do dataframe, foram aplicadas as seguintes transformações:
+
+1. PEA:
+   Foi realizada uma modificação na variável "PEA" para tratá-la como uma taxa em relação à variável "População". Essa transformação é justificada pelo fato de que a População Economicamente Ativa (PEA) é um subgrupo da população total. Para realizar essa modificação, cada valor da variável "PEA" foi dividido pelo valor correspondente da variável "População". Dessa forma, os valores da variável "PEA" passaram a representar a proporção da população economicamente ativa em relação à população total.
+
+2. População:
+   Após a transformação acima, a variável "População" foi transformada com a aplicação do logaritmo em cada valor. O uso do logaritmo permite uma interpretação diferente dos valores, enfatizando diferenças proporcionais em vez de diferenças absolutas. Essa transformação pode ser útil em análises estatísticas, especialmente quando os dados estão distribuídos de forma assimétrica.
+
+3. PIB Corrente:
+   A variável "PIB Corrente" foi transformada aplicando a função logarítmica em cada valor. Essa modificação foi realizada para tratar assimetrias e variações proporcionais nos valores do PIB Corrente. A aplicação do logaritmo ajuda a reduzir a amplitude dos dados, permitindo uma interpretação mais precisa e facilitando a análise comparativa dos valores do PIB Corrente entre os municípios do Paraná.
+
+4. PIB per Capita:
+   Similarmente à variável anterior, a variável "PIB per Capita" também passou por uma transformação logarítmica. Essa modificação foi aplicada para lidar com a ampla dispersão dos valores e para permitir uma melhor interpretação comparativa dos valores do PIB per Capita entre os municípios do Paraná.
+
+5. Distorção Fundamental:
+   A variável "Distorção Fundamental" foi modificada dividindo cada valor por 100. Essa transformação foi realizada para expressar a distorção em relação à educação fundamental como uma proporção decimal. Ao dividir os valores por 100, os valores da variável "Distorção Fundamental" agora representam a proporção da distorção em relação à educação fundamental em uma escala de 0 a 1.
+
+6. Distorção Médio:
+   A variável "Distorção Médio" também foi modificada dividindo cada valor por 100. Essa transformação foi realizada para expressar a distorção em relação à educação média como uma proporção decimal. Ao dividir os valores por 100, os valores da variável "Distorção Médio" agora representam a proporção da distorção em relação à educação média em uma escala de 0 a 1.
+
+7. Analfabetismo:
+   A variável "Analfabetismo" foi modificada dividindo cada valor por 100. Essa transformação foi realizada para expressar a taxa de analfabetismo como uma proporção decimal. Ao dividir os valores por 100, os valores da variável "Analfabetismo" agora representam a proporção da taxa de analfabetismo em uma escala de 0 a 1.
+
+
+Essas transformações foram realizadas com o objetivo de fornecer uma perspectiva mais adequada e comparativa das variáveis, possibilitando uma análise mais aprofundada dos dados do dataframe.
+
+
+```{r, echo=FALSE}
+df$PEA <- df$PEA/df$Populacao
+df$Populacao <- log(df$Populacao)
+df$PIB_Corrente <- log(df$PIB_Corrente)
+df$PIB_per_Capita <- log(df$PIB_per_Capita)
+df$Distorcao_Fundamen <- df$Distorcao_Fundamen/100
+df$Distorcao_Medio <- df$Distorcao_Medio/100
+df$Analfabetismo <- df$Analfabetismo/100
+```
+
+## Análise Descritiva
+
+A visualização abaixo apresenta o boxplot das variáveis numéricas do dataframe. Cada variável é representada em um painel separado, permitindo uma análise comparativa dos seus valores.
+
+```{r, echo=FALSE, warning=FALSE}
+library(ggplot2)
+library(reshape2)
+
+ggplot(melt(df[, c("Gini", "IPDM", "Populacao", "PIB_Corrente", "PIB_per_Capita", "Analfabetismo", "Distorcao_Fundamen", "Distorcao_Medio", "PEA")], id.vars = NULL), aes(x = "", y = value)) +
+  geom_boxplot() +
+  xlab("Variável") +
+  ylab("Valor") +
+  ggtitle("Boxplot das variáveis numéricas") +
+  facet_wrap(~ variable, scales = "free", ncol = 3)
+max_value <- max(df$PEA)
+median_value <- median(df$PEA[df$PEA != max_value])
+df$PEA[df$PEA == max_value] <- median_value
+```
+
+É importante destacar um ponto interessante no boxplot da variável PEA (População Economicamente Ativa). Observa-se um possível outlier, um valor discrepante com o restante dos dados. O município de Altamira do Paraná tem a variável PEA com valor 1.55, sendo que esta deveria ser um valor entre 0 e 1, como proposto anteriormente pela transformação, já que a População Economicamente Ativa de um município é subconjunto de sua População. Após uma investigação mais detalhada nos dados estatísticos do município, foi confirmado que a população desse município vem diminuindo ano após ano. Como resultado, a População estimada pelo IBGE para o ano corrente é maior do que a variável PEA, que foi medida pela última vez em 2010. Para lidar com esse outlier, foi feita a imputação por mediana.
+
+## Histogramas
+
+Abaixo temos o histograma para a variável resposta Gini.
+
+
+```{r, echo=FALSE}
+hist(df$Gini, freq = FALSE, xlab = 'Gini', ylab = 'Densidade', main = '', col = "#FFCCCC")
+lines(density(df$Gini), col = "#990000", lwd = 4)
+```
+
+Marginalmente, a variável resposta Gini apresenta uma distribuição aproximadamente simétrica. Isso significa que há uma concentração de valores em torno de um pico central no histograma, indicando uma distribuição relativamente uniforme dos índices de Gini no conjunto de dados.
+
+Abaixo, tem-se os histogramas das variáveis explicativas. Nota-se que, assim como a variável resposta, as variáveis IPDM, PIB per Capita, Analfabetismo e PEA também exibem uma distribuição aproximadamente simétrica.
+
+```{r, echo=FALSE}
+
+par(mfrow=c(2,4))
+par(pin = c(1, 1))
+# Variável IPDM
+hist_ipdm <- hist(df$IPDM, freq = FALSE, xlab = 'IPDM', ylab = 'Densidade', main = '', col = "#FF0000", ylim = c(0,9))
+lines(density(df$IPDM), col = "#990000", lwd = 4)
+
+# Variável População
+hist_populacao <- hist(df$Populacao, freq = FALSE, xlab = 'População', ylab = 'Densidade', main = '', col = "#FFCC99", ylim = c(0,0.4))
+lines(density(df$Populacao), col = "#FF6600", lwd = 4)
+
+# Variável PIB_Corrente
+hist_pib_corrente <- hist(df$PIB_Corrente, freq = FALSE, xlab = 'PIB Corrente', ylab = 'Densidade', main = '', col = "#CCFFCC", ylim = c(0,0.4))
+lines(density(df$PIB_Corrente), col = "#006600", lwd = 4)
+
+# Variável PIB_per_Capita
+hist_pib_per_capita <- hist(df$PIB_per_Capita, freq = FALSE, xlab = 'PIB per Capita', ylab = 'Densidade', main = '', col = "#CCCCFF")
+lines(density(df$PIB_per_Capita), col = "#333399", lwd = 4)
+
+# Variável Analfabetismo
+hist_analfabetismo <- hist(df$Analfabetismo, freq = FALSE, xlab = 'Analfabetismo', ylab = 'Densidade', main = '', col = "#CCBBCC")
+lines(density(df$Analfabetismo), col = "#AABBCC", lwd = 4)
+
+# Variável Distorcao_Fundamen
+hist_distorcao_fundamen <- hist(df$Distorcao_Fundamen, freq = FALSE, xlab = 'Distorção Fundamental', ylab = 'Densidade', main = '', col = "#CCFFFF")
+lines(density(df$Distorcao_Fundamen), col = "#006666", lwd = 4)
+
+# Variável Distorcao_Medio
+hist_distorcao_medio <- hist(df$Distorcao_Medio, freq = FALSE, xlab = 'Distorção Médio', ylab = 'Densidade', main = '', col = "#FFFFCC")
+lines(density(df$Distorcao_Medio), col = "#CCCC00", lwd = 4)
+
+# Variável PEA
+hist_pea <- hist(df$PEA, freq = FALSE, xlab = 'PEA', ylab = 'Densidade', main = '', col = "#BBCCAA", ylim = c(0,6))
+lines(density(df$PEA), col = "#339900", lwd = 4)
+
+
+```
+
+
+Abaixo temos um gráfico de dispersão com retas de regressão ajustadas para cada uma das variáveis explicativas em relação à variável resposta Gini. O gráfico foi organizado em um grid, com cada variável representada em um painel separado. O eixo x representa os valores das variáveis explicativas e o eixo y representa o valor da variável resposta Gini.
+
+```{r, echo=FALSE, warning=FALSE}
+library(stats)
+library(assertive, warn.conflicts = FALSE)
+suppressPackageStartupMessages(library(assertive))
+
+#imputacao outlier PEA
+
+df_temp <- df[, -1]
+ggplot(melt(df_temp, id.vars = "Gini"), aes(x = value, y = Gini)) +
+  geom_point() +
+  geom_smooth(formula = y~x, method = "lm", se=TRUE, color = "red", size = 1) +
+  ylab("Gini") +
+  xlab("Valor") +
+  ggtitle("Gráficos de dispersão") +
+  facet_wrap(~ variable, scales = "free", ncol = 2)
+```
+
+Pontos a destacar:
+
+1. IPDM:
+   É a variável que apresenta uma reta de regressão ajustada com uma inclinação negativa mais acentuada. Isso indica na direção de que há uma relação negativa entre essa variável e o Gini, ou seja, quanto maior o valor de IPDM, menor tende a ser o valor de Gini.
+2. PIB_Corrente e População:
+   São as variáveis que apresentam uma reta de regressão ajustada com uma inclinação positiva mais acentuada. Isso sugere uma relação positiva entre essas variável e o Índice de Gini.
+3. Demais variáveis:
+   Não são observadas tendências claras em relação à variável resposta Gini. Isso sugere que essas variáveis podem ter uma influência limitada ou não linear sobre o Gini.
+
+
+## Modelo
+
+Inicialmente, ajusta-se o modelo de regressão linear múltipla com todas as variáveis de forma aditiva e todas as observações.
+
+A expressão do modelo proposto é dada por:
+
+\[y_i | x_i \sim N(\mu_i, \sigma^2)\]
+
+\[\mu_i = E(y_i | x_i) = \beta_0 + \beta_1  ipdm + \beta_2  popul + \beta_3  pib\_corr + \beta_4  pib\_cap + \beta_5  analf + \beta_6  dist\_fund + \beta_7  dist\_medio + \beta_8  pea\]
+
+
+```{r, echo=FALSE}
+ajuste1 <- lm(data = df, Gini ~ IPDM + Populacao + PIB_Corrente + PIB_per_Capita + Analfabetismo + Distorcao_Fundamen + Distorcao_Medio + PEA)
+par(mfrow=c(2,2))
+plot(ajuste1, which = 1:4)
+```
+
+O gráfico do canto esquerdo superior traz os resíduos ordinários versus os valores ajustados. Percebe-se os pontos aleatoriamente distribuídos e uma linha aproximadamente constante ao decorrer do gráfico. Porém, um ponto a direita se destaca. Refere-se ao município de Altamira do Paraná. Pode ser um indicativo de que a imputação pela média não foi uma boa escolha, ou que o munícipio está com outros dados também incorretos, pois esse munícipio também aprenseta a maior distância de Cook e é o mais isolado a direita no gráfico dos resíduos padronizados.
+
+No canto direito superior mostra os quantis teóricos da distribuição Normal padrão contra os resíduos padronizados. Nesse caso, indicam uma suposta normalidade, com uma fuga considerável na extremidade superior.
+
+Ao inferior esquerdo apresenta-se a raiz quadrada dos resíduos padronizados versus os valores ajustados. É possível inferir uma variância constante por conta da linha central ser aproximadamente linear.
+
+E por fim, o gráfico do canto inferior direito apresenta os valores da distância de Cook para cada observação. Destaca-se a observação 5, referente ao município de Altamira do Paraná.
+
+Os gráficos de resíduos indicam aparente homocedasticidade, e uma observação atípica.
+
+## Verificação de normalidade dos resíduos no ajuste 1
+
+```{r, echo=FALSE,results=FALSE,fig.keep='all', message=FALSE, warning=FALSE}
+library(hnp)
+par(mfrow=c(1,2))
+hist(ajuste1$residuals, probability = TRUE, main = 'Resíduos do Ajuste 1',
+      xlab = 'Resíduos', ylab = 'Frequência', col = "#FFFFCC", ylim = c(0,9))
+lines(density(ajuste1$residuals), col = "#666600", lwd = 4)
+ 
+hnp(ajuste1, main = 'Gráfico Normal com Envelope', xlab = 'Quantis Teóricos', ylab = 'Resíduos')
+```
+
+Ao realizar o teste Shapiro-Wilk, onde $H_0$: Os resíduos têm distribuição normal e $H_1$: Os resíduos não têm distribuição normal; temos evidência para rejeitar a hipótese nula e, portanto, admitir não normalidade dos dados. O que confere com a análise gráfica apresentada acima.
+
+Para avaliar a influência de cada observação no modelo, são calculadas as seguintes medidas de influência: DFBETAS, DFFITS, COVRATIO, distância de Cook e elementos da matriz H. Em seguida, foi criado um subconjunto de dados que exclui as observações identificadas como influentes de acordo com as medidas calculadas anteriormente. Abaixo tem-se os gráficos de comparação de resíduos ajustados para esse novo modelo.
+
+```{r, echo=FALSE, results=FALSE, warning=FALSE, message=FALSE}
+shapiro.test(ajuste1$residuals)
+library(car)
+library(hnp)
+inf <- influence.measures(ajuste1) 
+subset <- rownames(summary(inf))
+df_subset <- subset(df, !(rownames(df) %in% subset))
+ajuste2 <- lm(Gini ~ IPDM + Populacao + PIB_Corrente + PIB_per_Capita + Analfabetismo + Distorcao_Fundamen + Distorcao_Medio + PEA, data = df_subset)
+summary(ajuste2)
+crPlots(ajuste2, layout=c(2,4))
+```
+
+Através desse gráfico, é possível avaliar a adequação do modelo, identificar possíveis padrões nos resíduos e verificar se há violações das suposições do modelo de regressão. Destacam-se as seguintes fortes relações: crescente quanto a variável _PIB_Corrente_, e decrescente quanto as variáveis _Populacao_ e _PIB_per_Capita_.
+As fracas relações entre as variáveis _Analfabetismo_ e _Distorcao_Fundamen_ e os resíduos ajustados do modelo de regressão sugerem que essas variáveis podem não contribuir de forma significativa para a explicação da variabilidade dos dados. Para fins de simplificação do modelo essas variáveis foram excluídas da regressão múltipla. A decisão se mostrou condizente com os dados ao se analisar que o coeficiente de determinação (R-quadrado) não sofreu alterações significativas. Essa constatação fortalece a justificativa para a exclusão dessas variáveis, pois indica que elas têm pouca influência na previsão da variável resposta.
+
+
+Sendo assim, a expressão do novo modelo, excluindo as variáveis citadas, é dada por:
+
+\[y_i | x_i \sim N(\mu_i, \sigma^2)\]
+
+\[\mu_i = E(y_i | x_i) = \beta_0 + \beta_1  ipdm + \beta_2  popul + \beta_3  pib\_corr + \beta_4  pib\_cap + \beta_5  dist\_medio + \beta_6  pea\]
+
+## Verificação de normalidade dos resíduos no ajuste 2
+
+```{r, echo=FALSE,results=FALSE,fig.keep='all', message=FALSE, warning=FALSE}
+ajuste3 <- lm(Gini ~ IPDM + Populacao + PIB_Corrente + PIB_per_Capita + Distorcao_Medio + PEA, data = df_subset)
+summary(ajuste3)
+par(mfrow = c(1,2))
+hist(ajuste3$residuals, probability = TRUE, main = 'Resíduos do Ajuste 2',
+     xlab = 'Resíduos', ylab = 'Frequência', col = "#FFFFCC") 
+
+lines(density(ajuste3$residuals), col = "#666600", lwd = 4)
+
+library(hnp)
+ hnp(ajuste3, main = 'Gráfico Normal com Envelope', xlab = 'Quantis Teóricos', ylab = 'Resíduos') 
+shapiro.test(ajuste3$residuals)
+```
+Ao analisar os gráficos dos resíduos do novo ajuste , observa-se uma melhora na adequação desses resíduos à distribuição normal. O histograma dos resíduos apresenta uma distribuição mais simétrica e a curva de densidade está mais próxima de uma distribuição normal. Além de que a fuga dos pontos mais superiores no gráfico com envelope é menor.  Isso sugere que o modelo ajustado está capturando de forma mais precisa o padrão dos dados e reduzindo a presença de desvios significativos.
+
+Essa sugestão de melhor adequação à distribuição normal é confirmada pelo teste de _Shapiro-Wilk_ realizado nos resíduos do ajuste1. O resultado do teste apresentou um _p-valor_ de 0,06207, o que indica que não há evidências suficientes para rejeitar a hipótese nula (H0) de que os resíduos seguem uma distribuição normal. Embora o p-valor esteja ligeiramente acima do nível de significância de 0,05 adotado, essa diferença é pequena e pode ser considerada dentro da margem de erro. Portanto, com base nos resultados do teste, é razoável admitir a hipótese nula e considerar que os resíduos se aproximam de uma distribuição normal.
+
+# Resultados e discussão
+
+Considerando o último ajuste, temos os seguintes resultados:
+
+```{r, echo=FALSE}
+summary(ajuste3)
+```
+1. Intercept:
+  
+
+
+# Conclusão
+
+
+
